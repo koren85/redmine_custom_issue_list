@@ -17,14 +17,8 @@ This plugin has been tested and is known to work on Redmine version 4.1. Compati
 
 1. Clone this repository into your Redmine's `plugins/` directory.
    git clone https://github.com/koren85/redmine_custom_issue_list
-
-markdown
-Copy code
 2. Run the database migration.
    rake redmine:plugins:migrate RAILS_ENV=production
-
-python
-Copy code
 3. Restart the Redmine application.
 
 ## Usage
