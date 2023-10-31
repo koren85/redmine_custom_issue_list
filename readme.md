@@ -16,7 +16,7 @@ This plugin has been tested and is known to work on Redmine version 4.1. Compati
 ## Installation
 
 1. Clone this repository into your Redmine's `plugins/` directory.
-   git clone https://github.com/yourusername/redmine_custom_issue_list.git
+   git clone https://github.com/koren85/redmine_custom_issue_list
 
 markdown
 Copy code
@@ -42,7 +42,7 @@ Currently, the plugin is only available in Russian. Support for other languages 
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the MIT License
 
 ## Contributing
 
