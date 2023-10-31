@@ -1,0 +1,6 @@
+<!-- redmine_custom_issue_list/app/views/users/_issue_list_setting.html.erb -->
+
+<p>
+  <%= label_tag 'user_issue_list_setting', 'Вариант отображения списка задач:' %>
+  <%= select_tag 'user[issue_list_setting]', options_for_select([[ 'Стандартный', 1 ], [ 'Измененный', 2 ]], User.current.issue_list_setting) %>
+</p>
