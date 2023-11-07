@@ -21,13 +21,17 @@
         </thead>
         <tbody>
         <%
-          def render_issue_with_children(issue, level, query)
-            # Render the issue itself
-            render_issue(issue, level, query)
+          issue_ids_in_list = issues.map(&:id)
+
+          def render_issue_with_children(issue, level, query, issue_ids_in_list)
+            # Render the issue if it's in the list or if it has no parent in the list
+            if issue_ids_in_list.include?(issue.id) || !issue_ids_in_list.include?(issue.parent_id)
+              render_issue(issue, level, query)
+            end
 
             # Render its children
             issue.children.each do |child|
-              render_issue_with_children(child, level + 1, query)
+              render_issue_with_children(child, level + 1, query, issue_ids_in_list)
             end
           end
 
@@ -52,7 +56,7 @@
             <tr class="group open">
               <td colspan="<%= query.inline_columns.size + 2 %>">
                 <span class="expander icon icon-expended" onclick="toggleRowGroup(this);">&nbsp;</span>
-                <span class="name"><%= group_name %></span> <span class="badge badge-count count"><%= group_issues.count %></span>
+                <span class="name"><%= group_name %></span> <span class="badge badge-count count"><%= group_issues.size %></span>
                 <%= link_to_function("#{l(:button_collapse_all)}/#{l(:button_expand_all)}",
                                      "toggleAllRowGroups(this)", :class => 'toggle-all') %>
               </td>
@@ -60,8 +64,8 @@
           <%
             end
             # Initially render issues without parents within the current group
-            group_issues.select { |i| i.parent_id.nil? }.each do |issue|
-              render_issue_with_children(issue, 0, query)
+            group_issues.select { |i| i.parent_id.nil? || !issue_ids_in_list.include?(i.parent_id) }.each do |issue|
+              render_issue_with_children(issue, 0, query, issue_ids_in_list)
             end
             end
           %>
@@ -69,6 +73,7 @@
       </table>
     </div>
   <% end -%>
+
 
 
 
