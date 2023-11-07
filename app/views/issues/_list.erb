@@ -26,7 +26,7 @@
           def render_issue_with_children(issue, level, query, issue_ids_in_list)
             # Render the issue if it's in the list or if it has no parent in the list
             if issue_ids_in_list.include?(issue.id) || !issue_ids_in_list.include?(issue.parent_id)
-              render_issue(issue, level, query)
+              render_issue(issue, level, query, issue_ids_in_list)
             end
 
             # Render its children
@@ -35,13 +35,23 @@
             end
           end
 
-          def render_issue(issue, level, query)
+          def render_issue(issue, level, query, issue_ids_in_list)
+            is_parent = issue.children.any?
         %>
-          <tr id="issue-<%= issue.id %>" class="hascontextmenu <%= cycle('odd', 'even') %> <%= issue.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %>">
+          <tr id="issue-<%= issue.id %>" class="hascontextmenu <%= cycle('odd', 'even') %> <%= issue.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %> <%= 'parent-issue' if is_parent %>">
             <td class="checkbox hide-when-print"><%= check_box_tag("ids[]", issue.id, false, :id => nil) %></td>
             <% query.inline_columns.each do |column| %>
-              <%= content_tag('td', column_content(column, issue), :class => column.css_classes) %>
-            <% end %>
+              <% content = column_content(column, issue) %>
+              <% if issue.children.any? %>
+                <%#= content_tag('td', content, :class => column.css_classes + (is_parent && column.name == :subject ? ' font-weight-bold' : '')) %>
+                <%= content_tag('td', column_content(column, issue), :class => column.css_classes, :style => 'font-weight: bold;') %>
+
+          <% else %>
+              <%#= content_tag('td', content, :class => column.css_classes + (is_parent && column.name == :subject ? ' font-weight-bold' : '')) %>
+                <%= content_tag('td', column_content(column, issue), :class => column.css_classes) %>
+
+          <% end %>
+              <% end %>
             <td class="buttons"><%= link_to_context_menu %></td>
           </tr>
         <%
@@ -73,6 +83,7 @@
       </table>
     </div>
   <% end -%>
+
 
 
 
