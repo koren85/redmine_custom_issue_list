@@ -1,7 +1,4 @@
-
 <% if User.current.issue_list_setting == 2 %>
-  <%# Измененный код для отображения списка задач с подзадачами %>
-
   <% query_options = nil unless defined?(query_options) %>
   <% query_options ||= {} %>
 
@@ -24,13 +21,9 @@
         </thead>
         <tbody>
         <%
-          def parent_issue_included?(issue, query)
-            issue.ancestors.any? { |ancestor| query.issue_ids.include?(ancestor.id) }
-          end
-
           def render_issue_with_children(issue, level, query)
-            # Render the issue itself if it's not a child of a filtered-out parent
-            render_issue(issue, level, query) unless parent_issue_included?(issue, query)
+            # Render the issue itself
+            render_issue(issue, level, query)
 
             # Render its children
             issue.children.each do |child|
@@ -43,18 +36,13 @@
           <tr id="issue-<%= issue.id %>" class="hascontextmenu <%= cycle('odd', 'even') %> <%= issue.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %>">
             <td class="checkbox hide-when-print"><%= check_box_tag("ids[]", issue.id, false, :id => nil) %></td>
             <% query.inline_columns.each do |column| %>
-              <% if issue.children.any? %>
-                <%= content_tag('td', column_content(column, issue), :class => column.css_classes, :style => 'font-weight: bold;') %>
-              <% else %>
-                <%= content_tag('td', column_content(column, issue), :class => column.css_classes) %>
-              <% end %>
+              <%= content_tag('td', column_content(column, issue), :class => column.css_classes) %>
             <% end %>
             <td class="buttons"><%= link_to_context_menu %></td>
           </tr>
         <%
           end
 
-          # Изменение логики группировки и начального рендеринга задач
           grouped_issues = issues.group_by { |issue| query.group_by_column ? query.group_by_column.value(issue) : nil }
 
           grouped_issues.each do |group_name, group_issues|
@@ -71,17 +59,20 @@
             </tr>
           <%
             end
-            # Initially render issues without parents within the current group or with parents that don't match the filter
-            group_issues.reject { |i| i.parent_id && query.issue_ids.include?(i.parent_id) }.each do |issue|
+            # Initially render issues without parents within the current group
+            group_issues.select { |i| i.parent_id.nil? }.each do |issue|
               render_issue_with_children(issue, 0, query)
             end
             end
           %>
-
         </tbody>
       </table>
     </div>
   <% end -%>
+
+
+
+
 
 <% else %>
   <%# Стандартный код для отображения списка задач %>
