@@ -2,7 +2,7 @@
   <% query_options = nil unless defined?(query_options) %>
   <% query_options ||= {} %>
 
-  <%= form_tag({}, :data => {:cm_url => issues_context_menu_path}) do -%>
+  <%= form_tag({}, :data => { :cm_url => issues_context_menu_path }) do -%>
     <%= hidden_field_tag 'back_url', url_for(:params => request.query_parameters), :id => nil %>
     <%= query_columns_hidden_tags(query) %>
     <div class="autoscroll">
@@ -25,24 +25,20 @@
           def render_issue(issue, level, query)
             css = "issue hascontextmenu #{cycle('odd', 'even')} #{issue.css_classes}"
             css << " idnt idnt-#{level}" if level > 0
-            is_parent = issue.children.any? ? 'font-weight: bold;' : ''
+            style = issue.children.any? ? 'font-weight: bold;' : '' # Apply bold style if the issue has children
         %>
-          <tr id="issue-<%= issue.id %>" class="<%= css %>">
+          <tr id="issue-<%= issue.id %>" class="<%= css %>" style="<%= style %>">
             <td class="checkbox hide-when-print"><%= check_box_tag("ids[]", issue.id, false, :id => nil) %></td>
             <% query.inline_columns.each do |column| %>
-              <%#= content_tag('td', column_content(column, issue), :class => column.css_classes) %>
-              <% content = column_content(column, issue) %>
-              <% content = content_tag('span', content, style: is_parent) if column.name == :subject %>
-              <%= content_tag('td', content, :class => column.css_classes, :style => column.name == :subject ? is_parent : '') %>
-
-          <% end %>
+              <%= content_tag('td', column_content(column, issue), :class => column.css_classes) %>
+            <% end %>
             <td class="buttons"><%= link_to_context_menu %></td>
           </tr>
         <%
           end
 
           # Method to render issues with their children, avoiding duplicates
-          def render_issues_with_hierarchy(issues, query, issue_ids_included, level=0)
+          def render_issues_with_hierarchy(issues, query, issue_ids_included, level = 0)
             issues.each do |issue|
               next if issue_ids_included.include?(issue.id)
               issue_ids_included.add(issue.id)
@@ -72,7 +68,8 @@
                 <tr class="group open">
                   <td colspan="<%= query.inline_columns.size + 2 %>">
                     <span class="expander icon icon-expended" onclick="toggleRowGroup(this);">&nbsp;</span>
-                    <span class="name"><%= group_name %></span> <span class="badge badge-count count"><%= issues.size %></span>
+                    <span class="name"><%= group_name %></span>
+                    <span class="badge badge-count count"><%= issues.size %></span>
                   </td>
                 </tr>
               <%
@@ -98,7 +95,7 @@
   <% query_options = nil unless defined?(query_options) %>
   <% query_options ||= {} %>
 
-  <%= form_tag({}, :data => {:cm_url => issues_context_menu_path}) do -%>
+  <%= form_tag({}, :data => { :cm_url => issues_context_menu_path }) do -%>
     <%= hidden_field_tag 'back_url', url_for(:params => request.query_parameters), :id => nil %>
     <%= query_columns_hidden_tags(query) %>
     <div class="autoscroll">
@@ -122,7 +119,9 @@
             <tr class="group open">
               <td colspan="<%= query.inline_columns.size + 2 %>">
                 <span class="expander icon icon-expended" onclick="toggleRowGroup(this);">&nbsp;</span>
-                <span class="name"><%= group_name %></span> <span class="badge badge-count count"><%= group_count %></span> <span class="totals"><%= group_totals %></span>
+                <span class="name"><%= group_name %></span>
+                <span class="badge badge-count count"><%= group_count %></span>
+                <span class="totals"><%= group_totals %></span>
                 <%= link_to_function("#{l(:button_collapse_all)}/#{l(:button_expand_all)}",
                                      "toggleAllRowGroups(this)", :class => 'toggle-all') %>
               </td>
