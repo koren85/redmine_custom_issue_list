@@ -1,154 +1,80 @@
-<% if User.current.issue_list_setting == 2 %>
-  <% query_options = nil unless defined?(query_options) %>
-  <% query_options ||= {} %>
+<% query_options = nil unless defined?(query_options) %>
+<% query_options ||= {} %>
 
-  <%= form_tag({}, :data => { :cm_url => issues_context_menu_path }) do -%>
-    <%= hidden_field_tag 'back_url', url_for(:params => request.query_parameters), :id => nil %>
-    <%= query_columns_hidden_tags(query) %>
-    <div class="autoscroll">
-      <table class="list issues odd-even <%= query.css_classes %>">
-        <thead>
-        <tr>
-          <th class="checkbox hide-when-print">
-            <%= check_box_tag 'check_all', '', false, :class => 'toggle-selection',
-                              :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}" %>
-          </th>
-          <% query.inline_columns.each do |column| %>
-            <%= column_header(query, column, query_options) %>
-          <% end %>
-          <th class="buttons"></th>
-        </tr>
-        </thead>
-        <tbody>
+<%= form_tag({}, :data => {:cm_url => issues_context_menu_path}) do -%>
+  <%= hidden_field_tag 'back_url', url_for(:params => request.query_parameters), :id => nil %>
+  <%= query_columns_hidden_tags(query) %>
+  <div class="autoscroll">
+    <table class="list issues odd-even <%= query.css_classes %>">
+      <thead>
+      <tr>
+        <th class="checkbox hide-when-print">
+          <%= check_box_tag 'check_all', '', false, :class => 'toggle-selection',
+                            :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}" %>
+        </th>
+        <% query.inline_columns.each do |column| %>
+          <%= column_header(query, column, query_options) %>
+        <% end %>
+        <th class="buttons"></th>
+      </tr>
+      </thead>
+      <tbody>
+      <%
+        issue_ids_included = Set.new
+        issues_grouped = query.group_by_column ? issues.group_by { |issue| query.group_by_column.value(issue) } : { nil => issues }
+
+        issues_grouped.each do |group, grouped_issues|
+          if group.present?
+            # Render the group header
+            group_name = format_object(group)
+            reset_cycle
+      %>
+          <tr class="group open">
+            <td colspan="<%= query.inline_columns.size + 2 %>">
+              <span class="expander icon icon-expended" onclick="toggleRowGroup(this);">&nbsp;</span>
+              <span class="name"><%= group_name %></span> <span class="badge badge-count count"><%= grouped_issues.size %></span>
+            </td>
+          </tr>
         <%
-          # Method to render a single issue
-          def render_issue(issue, level, query)
-            css = "issue hascontextmenu #{cycle('odd', 'even')} #{issue.css_classes}"
-            css << " idnt idnt-#{level}" if level > 0
-            style = issue.children.any? ? 'font-weight: bold;' : '' # Apply bold style if the issue has children
+          end
+
+          grouped_issues.each do |issue|
+            next if issue_ids_included.include?(issue.id)
+            issue_ids_included.add(issue.id)
+
+            is_parent = issue.children.any?
+            style = is_parent ? 'font-weight: bold;' : ''
+
+            # Render the issue
         %>
-          <tr id="issue-<%= issue.id %>" class="<%= css %>" style="<%= style %>">
+          <tr id="issue-<%= issue.id %>" class="issue hascontextmenu <%= cycle('odd', 'even') %> <%= issue.css_classes %>" style="<%= style %>">
             <td class="checkbox hide-when-print"><%= check_box_tag("ids[]", issue.id, false, :id => nil) %></td>
             <% query.inline_columns.each do |column| %>
               <%= content_tag('td', column_content(column, issue), :class => column.css_classes) %>
             <% end %>
             <td class="buttons"><%= link_to_context_menu %></td>
           </tr>
-        <%
-          end
-
-          # Method to render issues with their children, avoiding duplicates
-          def render_issues_with_hierarchy(issues, query, issue_ids_included, level = 0)
-            issues.each do |issue|
-              next if issue_ids_included.include?(issue.id)
-              issue_ids_included.add(issue.id)
-
-              render_issue(issue, level, query)
-
-              # Only render children if the issue itself is not a child
-              # or its parent is not in the list (thus not visible)
-              if issue.children.any? && (issue.parent.nil? || !issue_ids_included.include?(issue.parent_id))
-                render_issues_with_hierarchy(issue.children, query, issue_ids_included, level + 1)
-              end
-            end
-          end
-
-          # Collect all issue ids for detecting duplicates
-          issue_ids_included = Set.new
-          issues_grouped_by = query.group_by_column ? issues.group_by(&:parent).transform_values { |v| v.group_by { |i| query.group_by_column.value(i) } } : { nil => issues.group_by(&:parent) }
-
-          issues_grouped_by.each do |parent, groups|
-            if query.group_by_column
-              groups.each do |group_name, issues|
-                if group_name.present?
-                  # Render the group header
-                  group_name = format_object(group_name)
-                  reset_cycle
-        %>
-                <tr class="group open">
-                  <td colspan="<%= query.inline_columns.size + 2 %>">
-                    <span class="expander icon icon-expended" onclick="toggleRowGroup(this);">&nbsp;</span>
-                    <span class="name"><%= group_name %></span>
-                    <span class="badge badge-count count"><%= issues.size %></span>
-                  </td>
-                </tr>
-              <%
-                end
-                render_issues_with_hierarchy(issues, query, issue_ids_included)
-                end
-                else
-                  render_issues_with_hierarchy(groups[nil], query, issue_ids_included) if groups[nil]
-                end
-                end
-              %>
-        </tbody>
-      </table>
-    </div>
-  <% end -%>
-
-
-
-
-
-<% else %>
-  <%# Стандартный код для отображения списка задач %>
-  <% query_options = nil unless defined?(query_options) %>
-  <% query_options ||= {} %>
-
-  <%= form_tag({}, :data => { :cm_url => issues_context_menu_path }) do -%>
-    <%= hidden_field_tag 'back_url', url_for(:params => request.query_parameters), :id => nil %>
-    <%= query_columns_hidden_tags(query) %>
-    <div class="autoscroll">
-      <table class="list issues odd-even <%= query.css_classes %>">
-        <thead>
-        <tr>
-          <th class="checkbox hide-when-print">
-            <%= check_box_tag 'check_all', '', false, :class => 'toggle-selection',
-                              :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}" %>
-          </th>
-          <% query.inline_columns.each do |column| %>
-            <%= column_header(query, column, query_options) %>
-          <% end %>
-          <th class="buttons"></th>
-        </tr>
-        </thead>
-        <tbody>
-        <% grouped_issue_list(issues, query) do |issue, level, group_name, group_count, group_totals| -%>
-          <% if group_name %>
-            <% reset_cycle %>
-            <tr class="group open">
-              <td colspan="<%= query.inline_columns.size + 2 %>">
-                <span class="expander icon icon-expended" onclick="toggleRowGroup(this);">&nbsp;</span>
-                <span class="name"><%= group_name %></span>
-                <span class="badge badge-count count"><%= group_count %></span>
-                <span class="totals"><%= group_totals %></span>
-                <%= link_to_function("#{l(:button_collapse_all)}/#{l(:button_expand_all)}",
-                                     "toggleAllRowGroups(this)", :class => 'toggle-all') %>
-              </td>
-            </tr>
-          <% end %>
-          <tr id="issue-<%= issue.id %>" class="hascontextmenu <%= cycle('odd', 'even') %> <%= issue.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %>">
-            <td class="checkbox hide-when-print"><%= check_box_tag("ids[]", issue.id, false, :id => nil) %></td>
-            <% query.inline_columns.each do |column| %>
-              <%= content_tag('td', column_content(column, issue), :class => column.css_classes) %>
-            <% end %>
-            <td class="buttons"><%= link_to_context_menu %></td>
-          </tr>
-          <% query.block_columns.each do |column|
-            if (text = column_content(column, issue)) && text.present? -%>
-              <tr class="<%= current_cycle %>">
-                <td colspan="<%= query.inline_columns.size + 2 %>" class="<%= column.css_classes %> block_column">
-                  <% if query.block_columns.count > 1 %>
-                    <span><%= column.caption %></span>
-                  <% end %>
-                  <%= text %>
-                </td>
+          <%
+            # Render child issues if any
+            if is_parent
+              issue.children.each do |child|
+                next if issue_ids_included.include?(child.id)
+                issue_ids_included.add(child.id)
+          %>
+              <tr id="issue-<%= child.id %>" class="issue hascontextmenu <%= cycle('odd', 'even') %> <%= child.css_classes %> idnt idnt-1">
+                <td class="checkbox hide-when-print"><%= check_box_tag("ids[]", child.id, false, :id => nil) %></td>
+                <% query.inline_columns.each do |column| %>
+                  <%= content_tag('td', column_content(column, child), :class => column.css_classes) %>
+                <% end %>
+                <td class="buttons"><%= link_to_context_menu %></td>
               </tr>
-            <% end -%>
-          <% end -%>
-        <% end -%>
-        </tbody>
-      </table>
-    </div>
-  <% end -%>
-<% end %>
+            <%
+              end
+              end
+              end
+              end
+            %>
+      </tbody>
+    </table>
+  </div>
+<% end -%>
